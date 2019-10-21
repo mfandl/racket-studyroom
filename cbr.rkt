@@ -123,3 +123,8 @@
 (displayln (strange-sum2 2 3 4 5 6))
 (displayln '((1 2 3) (7 8 9)))
 (displayln (strange-sum3 (1 2 3) (7 8 9)))
+
+
+(define-values (m n) (values 2 3))
+
+(display (begin (q m n) (list m n)))
