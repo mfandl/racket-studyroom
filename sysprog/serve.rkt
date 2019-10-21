@@ -19,6 +19,7 @@
 
 (define (accept-and-handle listener)
   (define cust (make-custodian))
+  (custodian-limit-memory cust (* 50 1024 1024))
   (parameterize ([current-custodian cust])
     (define-values (in out) (tcp-accept listener))
     (thread (lambda ()
