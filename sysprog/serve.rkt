@@ -31,12 +31,15 @@
             (sleep 10)
             (custodian-shutdown-all cust))))
 
+(define-syntax-rule (display-return arg)
+  (let ([tmp arg])
+    (begin (displayln tmp)
+           tmp)))
+
 (define (handle in out)
   (define req
     (regexp-match #rx"^GET (.+) HTTP/[0-9]+"
-                  (let ([l (read-line in)])
-                    (begin (displayln l)
-                           l))))
+                  (display-return (read-line in))))
   (when req
     (regexp-match #rx"(\r\n|^)\r\n" in)
     (let ([xexpr (prompt (dispatch (list-ref req 1)))])
@@ -97,6 +100,13 @@
     (send/suspend
       (lambda (k-url)
         (build-request-page label k-url ""))))
+  (string->number (cdr (assq 'number query))))
+
+(define (get-number-b label)
+  (define query (call/cc (lambda (k)
+                           (define tag (format "kl~a" (current-inexact-milliseconds)))
+                           (hash-set! dispatch-table tag k)
+                           (abort (build-request-page label (string-append "/" tag) "")))))
   (string->number (cdr (assq 'number query))))
 
 (define (send/suspend mk-page)
