@@ -1,7 +1,8 @@
 #lang racket
 
 (require xml
-         net/url)
+         net/url
+         racket/control)
 
 (define (go)
   'workss)
@@ -33,10 +34,12 @@
 (define (handle in out)
   (define req
     (regexp-match #rx"^GET (.+) HTTP/[0-9]+"
-                  (read-line in)))
+                  (let ([l (read-line in)])
+                    (begin (displayln l)
+                           l))))
   (when req
     (regexp-match #rx"(\r\n|^)\r\n" in)
-    (let ([xexpr (dispatch (list-ref req 1))])
+    (let ([xexpr (prompt (dispatch (list-ref req 1)))])
      (display "HTTP/1.0 200 Okay\r\n" out)
      (display "Server: k\r\nContent-Type: text/html\r\n\r\n" out)
      (display (xexpr->string xexpr) out))))
@@ -73,9 +76,42 @@
   `(html (body ,@(for/list ([i (in-range n)])
                    " hello"))))
 
+(define (sum query)
+  (build-request-page "First number:" "/one" ""))
+
+(define (one query)
+  (build-request-page "Second number:" "/two" (cdr (assq 'number query))))
+
+(define (two query)
+  (let ([n (string->number (cdr (assq 'hidden query)))]
+         [m (string->number (cdr (assq 'number query)))])
+    `(html (body "The sum is " ,(number->string (+ m n))))))
+
+(define (sum2 query)
+  (define m (get-number "First number:"))
+  (define n (get-number "Second number:"))
+  `(html (body "The sum is " ,(number->string (+ m n)))))
+
+(define (get-number label)
+  (define query
+    (send/suspend
+      (lambda (k-url)
+        (build-request-page label k-url ""))))
+  (string->number (cdr (assq 'number query))))
+
+(define (send/suspend mk-page)
+  (let/cc k
+          (define tag (format "k~a" (current-inexact-milliseconds)))
+          (hash-set! dispatch-table tag k)
+          (abort (mk-page (string-append "/" tag)))))
+
 (hash-set! dispatch-table "hello"
            (lambda (query)
              `(html (body "Hello, World!"))))
 
 (hash-set! dispatch-table "many" many)
 (hash-set! dispatch-table "reply" reply)
+(hash-set! dispatch-table "sum" sum)
+(hash-set! dispatch-table "one" one)
+(hash-set! dispatch-table "two" two)
+(hash-set! dispatch-table "sum2" sum2)
