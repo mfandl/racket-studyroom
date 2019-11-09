@@ -63,7 +63,7 @@
 
 (define-syntax define-for-cbr
   (syntax-rules ()
-    [(define-for-cbd do-f (id0 id ...)
+    [(define-for-cbr do-f (id0 id ...)
                      (gens ...) body)
      (define-for-cbr do-f (id ...)
                      (gens ... (id0 get put)) body)]
